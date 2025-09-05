@@ -6,10 +6,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    #map { height: 100vh; }
+    #map { height: 90vh; }
+    #filtro {
+      padding: 10px;
+      font-family: sans-serif;
+    }
   </style>
 </head>
 <body>
+  <div id="filtro">
+    <label for="tipo">Filtrar por tipo:</label>
+    <select id="tipo">
+      <option value="todos">Todos</option>
+      <option value="civil">Civil</option>
+      <option value="military">Militar</option>
+      <option value="regional">Regional</option>
+      <option value="private">Privado</option>
+    </select>
+  </div>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -22,42 +36,62 @@
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Carregar GeoJSON externo
-    const geojsonLayer = new L.GeoJSON.AJAX("aerodromos.geojson", {
-      pointToLayer: function (feature, latlng) {
-        const tipo = feature.properties["aerodrome:type"] || "desconhecido";
-        const cor = tipo === "military" ? "red" : "blue";
+    let geojsonLayer;
 
-        return L.circleMarker(latlng, {
-          radius: 8,
-          color: cor,
-          fillColor: cor,
-          fillOpacity: 0.7
-        });
-      },
-      onEachFeature: function (feature, layer) {
-        const props = feature.properties;
-        const nome = props.name || "Sem nome";
-        const tipo = props["aerodrome:type"] || "desconhecido";
-        const icao = props.icao || "N/A";
-        const ele = props.ele ? props.ele + " m" : "Desconhecida";
-        const website = props.website ? `<a href="${props.website}" target="_blank">Website oficial</a><br>` : "";
-        const lat = feature.geometry.coordinates[1];
-        const lon = feature.geometry.coordinates[0];
-
-        const popup = `
-          <strong>${nome}</strong><br>
-          Tipo: ${tipo === "military" ? "Militar 🪖" : "Civil 🛩️"}<br>
-          ICAO: ${icao}<br>
-          Elevação: ${ele}<br>
-          ${website}
-          <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">Ver no Google Maps</a>
-        `;
-        layer.bindPopup(popup);
+    function carregarGeoJSON(tipoSelecionado) {
+      if (geojsonLayer) {
+        map.removeLayer(geojsonLayer);
       }
-    });
 
-    geojsonLayer.addTo(map);
+      geojsonLayer = new L.GeoJSON.AJAX("aerodromos.geojson", {
+        filter: function (feature) {
+          const tipo = feature.properties["aerodrome:type"] || "desconhecido";
+          return tipoSelecionado === "todos" || tipo === tipoSelecionado;
+        },
+        pointToLayer: function (feature, latlng) {
+          const tipo = feature.properties["aerodrome:type"] || "desconhecido";
+          const cor = tipo === "military" ? "red" : "blue";
+
+          return L.circleMarker(latlng, {
+            radius: 8,
+            color: cor,
+            fillColor: cor,
+            fillOpacity: 0.7
+          });
+        },
+        onEachFeature: function (feature, layer) {
+          const props = feature.properties;
+          const nome = props.name || "Sem nome";
+          const tipo = props["aerodrome:type"] || "desconhecido";
+          const icao = props.icao || "N/A";
+          const ele = props.ele ? props.ele + " m" : "Desconhecida";
+          const website = props.website ? `<a href="${props.website}" target="_blank">Website oficial</a><br>` : "";
+          const lat = feature.geometry.coordinates[1];
+          const lon = feature.geometry.coordinates[0];
+
+          const popup = `
+            <strong>${nome}</strong><br>
+            Tipo: ${tipo}<br>
+            ICAO: ${icao}<br>
+            Elevação: ${ele}<br>
+            ${website}
+            <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">Ver no Google Maps</a>
+          `;
+          layer.bindPopup(popup);
+        }
+      });
+
+      geojsonLayer.addTo(map);
+    }
+
+    // Inicializar com todos
+    carregarGeoJSON("todos");
+
+    // Atualizar ao mudar o filtro
+    document.getElementById("tipo").addEventListener("change", function () {
+      const tipoSelecionado = this.value;
+      carregarGeoJSON(tipoSelecionado);
+    });
   </script>
 </body>
 </html>
