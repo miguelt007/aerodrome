@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <title>Aeródromos de Portugal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     #map { height: 100vh; }
@@ -13,70 +12,52 @@
 <body>
   <div id="map"></div>
 
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-ajax/dist/leaflet.ajax.min.js"></script>
+
   <script>
-    // Inicializar o mapa centrado em Portugal
     const map = L.map('map').setView([39.5, -8], 7);
 
-    // Camada base
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Dados dos aeródromos (exemplo)
-    const aerodromos = [
-      {
-        name: "Aeródromo de Cascais",
-        lat: 38.7251,
-        lon: -9.3556,
-        type: "civil",
-        icao: "LPCS",
-        ele: 120,
-        website: "https://www.aerodromodecascais.pt"
+    // Carregar GeoJSON externo
+    const geojsonLayer = new L.GeoJSON.AJAX("aerodromos.geojson", {
+      pointToLayer: function (feature, latlng) {
+        const tipo = feature.properties["aerodrome:type"] || "desconhecido";
+        const cor = tipo === "military" ? "red" : "blue";
+
+        return L.circleMarker(latlng, {
+          radius: 8,
+          color: cor,
+          fillColor: cor,
+          fillOpacity: 0.7
+        });
       },
-      {
-        name: "Base Aérea de Monte Real",
-        lat: 39.8281,
-        lon: -8.8875,
-        type: "military",
-        icao: "LPMR",
-        ele: 60,
-        website: "https://www.emfa.pt"
-      },
-      {
-        name: "Aeródromo de Évora",
-        lat: 38.5667,
-        lon: -7.9028,
-        type: "civil",
-        icao: "LPEV",
-        ele: 289,
-        website: null
+      onEachFeature: function (feature, layer) {
+        const props = feature.properties;
+        const nome = props.name || "Sem nome";
+        const tipo = props["aerodrome:type"] || "desconhecido";
+        const icao = props.icao || "N/A";
+        const ele = props.ele ? props.ele + " m" : "Desconhecida";
+        const website = props.website ? `<a href="${props.website}" target="_blank">Website oficial</a><br>` : "";
+        const lat = feature.geometry.coordinates[1];
+        const lon = feature.geometry.coordinates[0];
+
+        const popup = `
+          <strong>${nome}</strong><br>
+          Tipo: ${tipo === "military" ? "Militar 🪖" : "Civil 🛩️"}<br>
+          ICAO: ${icao}<br>
+          Elevação: ${ele}<br>
+          ${website}
+          <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">Ver no Google Maps</a>
+        `;
+        layer.bindPopup(popup);
       }
-    ];
-
-    // Adicionar marcadores com popups
-    aerodromos.forEach(aero => {
-      const color = aero.type === "military" ? "red" : "blue";
-
-      const marker = L.circleMarker([aero.lat, aero.lon], {
-        radius: 8,
-        color: color,
-        fillColor: color,
-        fillOpacity: 0.7
-      }).addTo(map);
-
-      const popupContent = `
-        <strong>${aero.name}</strong><br>
-        Tipo: ${aero.type === "military" ? "Militar 🪖" : "Civil 🛩️"}<br>
-        ICAO: ${aero.icao || "N/A"}<br>
-        Elevação: ${aero.ele ? aero.ele + " m" : "Desconhecida"}<br>
-        ${aero.website ? `<a href="${aero.website}" target="_blank">Website oficial</a><br>` : ""}
-        <a href="https://www.google.com/maps?q=${aero.lat},${aero.lon}" target="_blank">Ver no Google Maps</a>
-      `;
-
-      marker.bindPopup(popupContent);
     });
+
+    geojsonLayer.addTo(map);
   </script>
 </body>
 </html>
