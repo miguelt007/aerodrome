@@ -18,10 +18,10 @@
     <label for="tipo">Filtrar por tipo:</label>
     <select id="tipo">
       <option value="todos">Todos</option>
-      <option value="civil">Civil</option>
       <option value="military">Militar</option>
-      <option value="public">Público</option>
+      <option value="civil">Civil</option>
       <option value="private">Privado</option>
+      <option value="public">Público</option>
     </select>
   </div>
   <div id="map"></div>
@@ -42,10 +42,22 @@
       const tipoTag = (props["aerodrome:type"] || "").trim().toLowerCase();
       const landuse = (props["landuse"] || "").trim().toLowerCase();
       const military = (props["military"] || "").trim().toLowerCase();
+      const operator = (props["operator"] || "").toLowerCase();
+      const name = (props["name"] || "").toLowerCase();
 
-      if (tipoTag) return tipoTag;
-      if (landuse === "military" || military) return "military";
-      return "civil"; // padrão
+      const isMilitar = tipoTag === "military" ||
+                        landuse === "military" ||
+                        military !== "" ||
+                        operator.includes("defesa") ||
+                        name.includes("base aérea") ||
+                        name.includes("militar") ||
+                        name.includes("beja");
+
+      if (isMilitar) return "military";
+      if (tipoTag === "civil") return "civil";
+      if (tipoTag === "private") return "private";
+      if (tipoTag === "public") return "public";
+      return "desconhecido";
     }
 
     function carregarGeoJSON(tipoSelecionado) {
