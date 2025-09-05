@@ -20,7 +20,7 @@
       <option value="todos">Todos</option>
       <option value="civil">Civil</option>
       <option value="military">Militar</option>
-      <option value="regional">Regional</option>
+      <option value="public">Público</option>
       <option value="private">Privado</option>
     </select>
   </div>
@@ -38,6 +38,16 @@
 
     let geojsonLayer;
 
+    function detectarTipo(props) {
+      const tipoTag = (props["aerodrome:type"] || "").trim().toLowerCase();
+      const landuse = (props["landuse"] || "").trim().toLowerCase();
+      const military = (props["military"] || "").trim().toLowerCase();
+
+      if (tipoTag) return tipoTag;
+      if (landuse === "military" || military) return "military";
+      return "civil"; // padrão
+    }
+
     function carregarGeoJSON(tipoSelecionado) {
       if (geojsonLayer) {
         map.removeLayer(geojsonLayer);
@@ -45,11 +55,11 @@
 
       geojsonLayer = new L.GeoJSON.AJAX("aerodromos.geojson", {
         filter: function (feature) {
-          const tipo = feature.properties["aerodrome:type"] || "desconhecido";
+          const tipo = detectarTipo(feature.properties);
           return tipoSelecionado === "todos" || tipo === tipoSelecionado;
         },
         pointToLayer: function (feature, latlng) {
-          const tipo = feature.properties["aerodrome:type"] || "desconhecido";
+          const tipo = detectarTipo(feature.properties);
           const cor = tipo === "military" ? "red" : "blue";
 
           return L.circleMarker(latlng, {
@@ -61,8 +71,8 @@
         },
         onEachFeature: function (feature, layer) {
           const props = feature.properties;
+          const tipo = detectarTipo(props);
           const nome = props.name || "Sem nome";
-          const tipo = props["aerodrome:type"] || "desconhecido";
           const icao = props.icao || "N/A";
           const ele = props.ele ? props.ele + " m" : "Desconhecida";
           const website = props.website ? `<a href="${props.website}" target="_blank">Website oficial</a><br>` : "";
@@ -84,13 +94,10 @@
       geojsonLayer.addTo(map);
     }
 
-    // Inicializar com todos
     carregarGeoJSON("todos");
 
-    // Atualizar ao mudar o filtro
     document.getElementById("tipo").addEventListener("change", function () {
-      const tipoSelecionado = this.value;
-      carregarGeoJSON(tipoSelecionado);
+      carregarGeoJSON(this.value);
     });
   </script>
 </body>
