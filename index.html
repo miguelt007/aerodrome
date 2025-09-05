@@ -23,6 +23,13 @@
     #map {
       height: 85vh;
     }
+    .icao-label {
+      background-color: white;
+      border: 1px solid #ccc;
+      padding: 2px 4px;
+      font-size: 12px;
+      color: black;
+    }
   </style>
 </head>
 <body>
@@ -117,6 +124,14 @@
             <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">Ver no Google Maps</a>
           `;
           layer.bindPopup(popup);
+
+          // Etiqueta permanente com ICAO ou local_ref
+          layer.bindTooltip(icao, {
+            permanent: true,
+            direction: 'right',
+            offset: [10, 0],
+            className: 'icao-label'
+          });
         }
       });
 
