@@ -39,26 +39,30 @@
     let geojsonLayer;
 
     function detectarTipo(props) {
-      const tipoTag = (props["aerodrome:type"] || "").trim().toLowerCase();
-      const landuse = (props["landuse"] || "").trim().toLowerCase();
-      const military = (props["military"] || "").trim().toLowerCase();
-      const operator = (props["operator"] || "").toLowerCase();
-      const name = (props["name"] || "").toLowerCase();
+  const tipoTag = (props["aerodrome:type"] || "").trim().toLowerCase();
+  const landuse = (props["landuse"] || "").trim().toLowerCase();
+  const military = (props["military"] || "").trim().toLowerCase();
+  const operator = (props["operator"] || "").toLowerCase();
+  const name = (props["name"] || "").toLowerCase();
 
-      const isMilitar = tipoTag === "military" ||
-                        landuse === "military" ||
-                        military !== "" ||
-                        operator.includes("defesa") ||
-                        name.includes("base aérea") ||
-                        name.includes("militar") ||
-                        name.includes("beja");
+  const isMilitar = tipoTag === "military" ||
+                    landuse === "military" ||
+                    military !== "" ||
+                    operator.includes("defesa") ||
+                    name.includes("base aérea") ||
+                    name.includes("militar") ||
+                    name.includes("beja");
 
-      if (isMilitar) return "military";
-      if (tipoTag === "civil") return "civil";
-      if (tipoTag === "private") return "private";
-      if (tipoTag === "public") return "public";
-      return "desconhecido";
-    }
+  if (isMilitar) return "military";
+  if (tipoTag === "private") return "private";
+  if (tipoTag === "public") return "public";
+
+  // Se não for militar e tiver aeroway=aerodrome, assume civil
+  const aeroway = (props["aeroway"] || "").trim().toLowerCase();
+  if (aeroway === "aerodrome") return "civil";
+
+  return "desconhecido";
+}
 
     function carregarGeoJSON(tipoSelecionado) {
       if (geojsonLayer) {
