@@ -6,14 +6,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    #map { height: 90vh; }
+    body {
+      margin: 0;
+      font-family: sans-serif;
+    }
+    h1 {
+      text-align: center;
+      padding: 10px;
+      background-color: #f0f0f0;
+      margin: 0;
+    }
     #filtro {
       padding: 10px;
-      font-family: sans-serif;
+      text-align: center;
+    }
+    #map {
+      height: 85vh;
     }
   </style>
 </head>
 <body>
+  <h1>Aeródromos de Portugal</h1>
+
   <div id="filtro">
     <label for="tipo">Filtrar por tipo:</label>
     <select id="tipo">
@@ -24,6 +38,7 @@
       <option value="public">Público</option>
     </select>
   </div>
+
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -39,30 +54,29 @@
     let geojsonLayer;
 
     function detectarTipo(props) {
-  const tipoTag = (props["aerodrome:type"] || "").trim().toLowerCase();
-  const landuse = (props["landuse"] || "").trim().toLowerCase();
-  const military = (props["military"] || "").trim().toLowerCase();
-  const operator = (props["operator"] || "").toLowerCase();
-  const name = (props["name"] || "").toLowerCase();
+      const tipoTag = (props["aerodrome:type"] || "").trim().toLowerCase();
+      const landuse = (props["landuse"] || "").trim().toLowerCase();
+      const military = (props["military"] || "").trim().toLowerCase();
+      const operator = (props["operator"] || "").toLowerCase();
+      const name = (props["name"] || "").toLowerCase();
 
-  const isMilitar = tipoTag === "military" ||
-                    landuse === "military" ||
-                    military !== "" ||
-                    operator.includes("defesa") ||
-                    name.includes("base aérea") ||
-                    name.includes("militar") ||
-                    name.includes("beja");
+      const isMilitar = tipoTag === "military" ||
+                        landuse === "military" ||
+                        military !== "" ||
+                        operator.includes("defesa") ||
+                        name.includes("base aérea") ||
+                        name.includes("militar") ||
+                        name.includes("beja");
 
-  if (isMilitar) return "military";
-  if (tipoTag === "private") return "private";
-  if (tipoTag === "public") return "public";
+      if (isMilitar) return "military";
+      if (tipoTag === "private") return "private";
+      if (tipoTag === "public") return "public";
 
-  // Se não for militar e tiver aeroway=aerodrome, assume civil
-  const aeroway = (props["aeroway"] || "").trim().toLowerCase();
-  if (aeroway === "aerodrome") return "civil";
+      const aeroway = (props["aeroway"] || "").trim().toLowerCase();
+      if (aeroway === "aerodrome") return "civil";
 
-  return "desconhecido";
-}
+      return "desconhecido";
+    }
 
     function carregarGeoJSON(tipoSelecionado) {
       if (geojsonLayer) {
@@ -89,16 +103,15 @@
           const props = feature.properties;
           const tipo = detectarTipo(props);
           const nome = props.name || "Sem nome";
-          const icao = props.icao || "N/A";
+          const icao = props.icao || props.local_ref || "N/A";
           const ele = props.ele ? props.ele + " m" : "Desconhecida";
           const website = props.website ? `<a href="${props.website}" target="_blank">Website oficial</a><br>` : "";
           const lat = feature.geometry.coordinates[1];
           const lon = feature.geometry.coordinates[0];
 
           const popup = `
-            <strong>${nome}</strong><br>
+            <strong>${nome} (${icao})</strong><br>
             Tipo: ${tipo}<br>
-            ICAO: ${icao}<br>
             Elevação: ${ele}<br>
             ${website}
             <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">Ver no Google Maps</a>
